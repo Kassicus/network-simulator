@@ -26,3 +26,7 @@ The game will have the following scenes.
 ## Scope
 
 For now the project scope is a single office with up to 150 employees. When the game starts the employee count is smaller so the network can be stood up quickly. As the game progresses, more employees are hired and the network must grow to meet the demand.
+
+## Language
+
+The game will be written in python using the pygame library.
