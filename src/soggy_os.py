@@ -17,7 +17,8 @@ class SoggyOS:
             '/home': ['user'],
             '/home/user': [],
             '/bin': [],
-            '/etc': [],
+            '/etc': ['network'],
+            '/etc/network': [],
             '/tmp': []
         }
         self.files = {}  # Maps full file paths to file content (str)

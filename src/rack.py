@@ -7,6 +7,20 @@ import pygame
 import logging
 from datetime import datetime
 
+# --- RackMountable base class and registry ---
+class RackMountable:
+    registry = []
+    display_name = "Rack Device"
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls not in RackMountable.registry:
+            RackMountable.registry.append(cls)
+    @classmethod
+    def get_display_name(cls):
+        return getattr(cls, 'display_name', cls.__name__)
+
+from switch import Switch
+
 # Configure logging for rack operations
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
@@ -21,6 +35,9 @@ class Rack:
         self.slots = [None for _ in range(self.units)]  # None means empty
         self.highlighted_unit = None
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        # Auto-populate first slot with a Switch
+        if self.slots[0] is None:
+            self.slots[0] = Switch(self.x, self.y, self.width, 0, self.unit_height)
         logging.info(f"Rack initialized at ({self.x}, {self.y}) with {self.units}U.")
 
     def draw(self, screen):
@@ -34,8 +51,12 @@ class Rack:
                 self.width,
                 self.unit_height
             )
-            color = (40, 44, 52) if self.slots[i] else (80, 80, 90)
-            pygame.draw.rect(screen, color, unit_rect)
+            # Draw device if present
+            if self.slots[i]:
+                self.slots[i].draw(screen)
+            else:
+                color = (80, 80, 90)
+                pygame.draw.rect(screen, color, unit_rect)
             # Highlight empty slot on hover
             if self.highlighted_unit == i and self.slots[i] is None:
                 pygame.draw.rect(screen, (120, 180, 255), unit_rect, width=4)
@@ -55,18 +76,25 @@ class Rack:
                     logging.info(f"Mouse over empty slot {unit+1}U.")
                 else:
                     self.highlighted_unit = None
+                # Pass to device if present
+                if self.slots[unit]:
+                    if hasattr(self.slots[unit], 'handle_mouse_motion'):
+                        self.slots[unit].handle_mouse_motion(pos)
             else:
                 self.highlighted_unit = None
         else:
             self.highlighted_unit = None
 
     def handle_mouse_click(self, pos):
-        # Placeholder for future: add/remove device
+        # Pass click to device if present
         if self.rect.collidepoint(pos):
             rel_y = pos[1] - self.y
             unit = rel_y // self.unit_height
             if 0 <= unit < self.units:
                 logging.info(f"Clicked on slot {unit+1}U.")
+                if self.slots[unit]:
+                    if hasattr(self.slots[unit], 'handle_mouse_click'):
+                        return self.slots[unit].handle_mouse_click(pos)
                 # Future: add/remove device logic here
 
     def get_state(self):
